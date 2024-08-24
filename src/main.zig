@@ -7,6 +7,7 @@ const Button = gtk.Button;
 const Image = gtk.Image;
 const Widget = gtk.Widget;
 const CheckButton = gtk.CheckButton;
+const HeaderBar = gtk.HeaderBar;
 const Window = gtk.Window;
 const CenterBox = gtk.CenterBox;
 const gio = gtk.gio;
@@ -80,12 +81,6 @@ fn buildUi(app: *GApplication) void {
 
     var vbox = Box.new(gtk.Orientation.vertical, 5);
 
-    var nsfw_checkbox = CheckButton.newWithLabel("enable nsfw");
-    _ = nsfw_checkbox.connectToggled(change_nsfw, .{}, .{});
-    const nsfw_checkbox_widget = nsfw_checkbox.into(Widget);
-
-    vbox.append(nsfw_checkbox_widget);
-
     const thread1 = std.Thread.spawn(.{ .stack_size = 1024 * 1024 * 1024 * 5 }, watch_images_thingy, .{}) catch {
         std.debug.panic("a", .{});
     };
@@ -111,6 +106,26 @@ fn buildUi(app: *GApplication) void {
 
     window.setChild(vbox.into(Widget));
     window.setDefaultSize(200, 500);
+
+    const titlebar = HeaderBar.new();
+    titlebar.setShowTitleButtons(false);
+    const titlebar_widget = titlebar.into(Widget);
+
+    const menubtn = gtk.MenuButton.new();
+    const randompopover = gtk.Popover.new();
+    const popoverbox = Box.new(.vertical, 0);
+
+    var nsfw_checkbox = CheckButton.newWithLabel("enable nsfw");
+    _ = nsfw_checkbox.connectToggled(change_nsfw, .{}, .{});
+    const nsfw_checkbox_widget = nsfw_checkbox.into(Widget);
+
+    popoverbox.append(nsfw_checkbox_widget);
+    randompopover.setChild(popoverbox.into(Widget));
+
+    menubtn.setPopover(randompopover.into(Widget));
+    titlebar.packEnd(menubtn.into(Widget));
+
+    window.setTitlebar(titlebar_widget);
     window.present();
 }
 
