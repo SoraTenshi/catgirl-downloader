@@ -1,6 +1,7 @@
 const std = @import("std");
 
-const url = "https://nekos.moe/api/v1/random/image?nsfw=false";
+pub var enable_nsfw = false;
+// pub const base_url = "https://nekos.moe/api/v1/random/image?nsfw=false";
 
 const ImageId = struct {
     id: []const u8,
@@ -37,6 +38,11 @@ pub fn createRequest(alloc: std.mem.Allocator, target_url: []const u8) anyerror!
 }
 
 pub fn loadImage(alloc: std.mem.Allocator) ![]u8 {
+    const url = switch (enable_nsfw) {
+        true => "https://nekos.moe/api/v1/random/image?nsfw=true",
+        false => "https://nekos.moe/api/v1/random/image?nsfw=false",
+    };
+    std.debug.print("using url: {s}\n", .{url});
     const mib = 1024 * 1024 * 1024;
 
     var request = try createRequest(alloc, url);

@@ -6,6 +6,7 @@ const Box = gtk.Box;
 const Button = gtk.Button;
 const Image = gtk.Image;
 const Widget = gtk.Widget;
+const CheckButton = gtk.CheckButton;
 const Window = gtk.Window;
 const CenterBox = gtk.CenterBox;
 const gio = gtk.gio;
@@ -68,11 +69,22 @@ fn create_button(label: *const [1:0]u8, image: *Image, btnname: ButtonName) *But
     return button;
 }
 
+fn change_nsfw(self: *CheckButton) void {
+    const is_active = self.getActive();
+    requester.enable_nsfw = is_active;
+}
+
 fn buildUi(app: *GApplication) void {
     const application = app.tryInto(Application) orelse return;
     var window = gtk.ApplicationWindow.new(application).into(Window);
 
     var vbox = Box.new(gtk.Orientation.vertical, 5);
+
+    var nsfw_checkbox = CheckButton.newWithLabel("enable nsfw");
+    _ = nsfw_checkbox.connectToggled(change_nsfw, .{}, .{});
+    const nsfw_checkbox_widget = nsfw_checkbox.into(Widget);
+
+    vbox.append(nsfw_checkbox_widget);
 
     const thread1 = std.Thread.spawn(.{ .stack_size = 1024 * 1024 * 1024 * 5 }, watch_images_thingy, .{}) catch {
         std.debug.panic("a", .{});
