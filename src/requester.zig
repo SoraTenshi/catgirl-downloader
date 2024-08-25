@@ -19,7 +19,7 @@ pub fn parseJsonResponse(allocator: std.mem.Allocator, response: []u8) !std.json
     return parsed;
 }
 
-pub fn createRequest(alloc: std.mem.Allocator, target_url: []const u8) anyerror!std.http.Client.Request {
+pub fn createRequest(alloc: std.mem.Allocator, target_url: []const u8) !std.http.Client.Request {
     var client = std.http.Client{
         .allocator = alloc,
     };
@@ -38,10 +38,10 @@ pub fn createRequest(alloc: std.mem.Allocator, target_url: []const u8) anyerror!
 }
 
 pub fn loadImage(alloc: std.mem.Allocator) ![]u8 {
-    const url = switch (enable_nsfw) {
-        true => "https://nekos.moe/api/v1/random/image?nsfw=true",
-        false => "https://nekos.moe/api/v1/random/image?nsfw=false",
-    };
+    const url = std.fmt.comptimePrint(
+        "https://nekos.moe/api/v1/random/image?nsfw={s}",
+        .{if (enable_nsfw) "true" else "false"},
+    );
     std.debug.print("using url: {s}\n", .{url});
     const mib = 1024 * 1024 * 1024;
 
@@ -67,8 +67,8 @@ pub fn loadImage(alloc: std.mem.Allocator) ![]u8 {
     const result = try alloc.alloc(u8, response_buffer.items.len);
     @memcpy(result, response_buffer.items);
 
+    // TODO: make this **not** allocate on the heap, but instead use a stack buffer "[1337]u8" instead.
     const file_path = try std.fmt.allocPrint(alloc, "/tmp/catgrildownloader/{s}.png", .{image_id_s[0..8]});
-    //std.debug.print("file path is {s}\n", .{file_path});
     const file = try std.fs.createFileAbsolute(file_path, .{ .read = true });
     try file.writeAll(result);
 
